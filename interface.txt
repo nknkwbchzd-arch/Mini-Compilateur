@@ -1,0 +1,95 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
+
+public class SimpleInterface {
+
+    public static void main(String[] args) {
+        // 1. Création de la fenêtre
+        JFrame fenetre = new JFrame("Compilateur PHP (If/Else)");
+        fenetre.setSize(600, 700);
+        fenetre.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        fenetre.setLocationRelativeTo(null); // Centrer
+
+        // 2. Zone pour écrire le code (Haut)
+        // Code PHP par défaut pour tester
+        String codeDefaut = "<?php\n" +
+                            "$x = 10;\n" +
+                            "if ($x > 5) {\n" +
+                            "    echo $x;\n" +
+                            "} else {\n" +
+                            "    $y = 0;\n" +
+                            "}\n" +
+                            "?>";
+                            
+        JTextArea zoneCode = new JTextArea(codeDefaut);
+        zoneCode.setFont(new Font("Consolas", Font.PLAIN, 14));
+        JScrollPane scrollHaut = new JScrollPane(zoneCode);
+        scrollHaut.setBorder(BorderFactory.createTitledBorder("Code Source PHP"));
+
+        // 3. Zone pour voir le résultat (Bas)
+        JTextArea zoneResultat = new JTextArea();
+        zoneResultat.setEditable(false); // On ne peut pas écrire dedans
+        zoneResultat.setFont(new Font("Consolas", Font.PLAIN, 13));
+        JScrollPane scrollBas = new JScrollPane(zoneResultat);
+        scrollBas.setBorder(BorderFactory.createTitledBorder("Résultats Analyse"));
+
+        // Séparateur entre le haut et le bas
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scrollHaut, scrollBas);
+        split.setDividerLocation(300); // Hauteur de la séparation
+
+        // 4. Le Bouton
+        JButton bouton = new JButton("LANCER L'ANALYSE");
+        bouton.setFont(new Font("Arial", Font.BOLD, 15));
+        bouton.setBackground(new Color(100, 149, 237)); // Bleu sympa
+        bouton.setForeground(Color.WHITE);
+
+        // 5. Action du bouton (Ce qui se passe quand on clique)
+        bouton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String code = zoneCode.getText();
+                StringBuilder sb = new StringBuilder();
+
+                try {
+                    // --- PARTIE LEXICALE ---
+                    sb.append("--- 1. ANALYSE LEXICALE ---\n");
+                    
+                    // On instancie ton LexicalePHP
+                    LexicalePHP lexer = new LexicalePHP(code);
+                    lexer.scanlexicale(); // Lance le scan
+                    List<LexicalePHP.lexeme> tokens = lexer.getTokens();
+                    
+                    // Affichage des tokens trouvés
+                    for(LexicalePHP.lexeme t : tokens) {
+                        sb.append(t.toString()).append("\n");
+                    }
+
+                    // --- PARTIE SYNTAXIQUE ---
+                    sb.append("\n--- 2. ANALYSE SYNTAXIQUE ---\n");
+                    
+                    // On passe la liste des tokens au parser
+                    SyntaxiquePHP parser = new SyntaxiquePHP(tokens);
+                    parser.Z(); // Lance l'analyse à partir de la racine (Z)
+                    
+                    // On récupère le texte stocké dans la variable 'logs' du parser
+                    sb.append(parser.logs.toString());
+
+                } catch (Exception ex) {
+                    sb.append("Erreur grave (Exception Java) : ").append(ex.getMessage());
+                    ex.printStackTrace(); // Pour le debug dans la console
+                }
+
+                // On affiche tout dans la zone du bas
+                zoneResultat.setText(sb.toString());
+            }
+        });
+
+        // 6. Assemblage
+        fenetre.add(split, BorderLayout.CENTER);
+        fenetre.add(bouton, BorderLayout.SOUTH);
+        fenetre.setVisible(true);
+    }
+}
